@@ -1,0 +1,25 @@
+---
+title: "PRAC_PROG_2"
+author: "Kimberly Matarrita"
+date: "2023-11-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(shiny)
+library(DT)
+library(ggplot2)
+library(shiny)
+library(leaflet)
+library(readr)
+library(janitor)
+library(dplyr)
+library(stringr)
+library(plotly)
+library(gt)
+library(waiter)
+```
+
+
+
