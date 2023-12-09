@@ -19,6 +19,63 @@ library(stringr)
 library(plotly)
 library(gt)
 library(waiter)
+library(readr)
+```
+
+```{r}
+# Cargar el conjunto de datos
+datos_libertad <- read_csv("datos_libertad.csv")
+View(datos_libertad)
+
+```
+```{r}
+
+
+
+ui <- fluidPage(
+  
+ 
+  titlePanel("Visualización de Datos de Libertad en Países"),
+  
+ 
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("country", "Seleccionar País:", choices = unique(data$country)),
+      sliderInput("yearRange", "Rango de Años:",
+                  min = 2000, max = 2023, value = c(2000, 2023)),
+      radioButtons("dataType", "Tipo de Datos:",
+                   choices = c("Ranking", "Puntaje"))
+    ),
+    
+ 
+    mainPanel(
+      plotOutput("freedomPlot"),
+      downloadButton("downloadData", "Descargar Datos")
+    )
+  )
+)
+
+
+server <- function(input, output) {
+  
+  
+  output$freedomPlot <- renderPlot({
+    
+  })
+  
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      paste("data-", input$country, ".csv", sep = "")
+    },
+    content = function(file) {
+ 
+    }
+  )
+}
+
+
+shinyApp(ui = ui, server = server)
+
 ```
 
 
