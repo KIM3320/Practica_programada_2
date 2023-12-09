@@ -20,62 +20,211 @@ library(plotly)
 library(gt)
 library(waiter)
 library(readr)
+library(shinydashboard)
 ```
 
 ```{r}
 # Cargar el conjunto de datos
 datos_libertad <- read_csv("datos_libertad.csv")
 View(datos_libertad)
-
 ```
-```{r}
 
 
+```{r}   
 
-ui <- fluidPage(
+ui <- dashboardPage(
+  skin = "purple",
   
- 
-  titlePanel("Visualización de Datos de Libertad en Países"),
+  dashboardHeader(title = "Visualización de Datos de Libertad en Países", 
+                  titleWidth = 300),
   
- 
-  sidebarLayout(
-    sidebarPanel(
-      selectInput("country", "Seleccionar País:", choices = unique(data$country)),
-      sliderInput("yearRange", "Rango de Años:",
-                  min = 2000, max = 2023, value = c(2000, 2023)),
-      radioButtons("dataType", "Tipo de Datos:",
-                   choices = c("Ranking", "Puntaje"))
-    ),
+  dashboardSidebar(
+    selectInput("pais", "Seleccione un pais", 
+                choices = NULL, selected = NULL),
     
- 
-    mainPanel(
-      plotOutput("freedomPlot"),
-      downloadButton("downloadData", "Descargar Datos")
+    sliderInput("anio", "Seleccione un año:", 
+                min = 2008, max = 2016, value = c(2008, 2016)),
+    
+    radioButtons("dataType", "Elige visualización:", 
+                 choices = c("Puntaje", "Ranking"), selected = "Puntaje"),
+    
+    downloadButton("downloadData", "Descargar datos")
+  ),
+  dashboardBody(
+    tabItem(
+      title = "Contenido de la pestaña Gráficos",
+      tabName = "grafico",
+      tabsetPanel(
+        tabPanel("Libertad Humana",
+                 br(),
+                 plotOutput("plot_libertad_humana")
+        ),
+        tabPanel("Libertad Personal",
+                 br(),
+                 plotOutput("plot_libertad_personal")
+        ),
+        tabPanel("Libertad Económica",
+                 br(),
+                 plotOutput("plot_libertad_economica")
+        )
+      )
     )
   )
 )
 
-
-server <- function(input, output) {
+server <- function(input, output, session) {
   
+ datos_libertad <- read_csv("datos_libertad.csv")
   
-  output$freedomPlot <- renderPlot({
+  updateSelectInput(session, "pais", choices = unique(datos_libertad$pais))
+  
+  observe({
+    updateSelectInput(session, "pais", 
+                      choices = unique(datos_libertad$pais))
+  })
+  
+  generate_plot <- function(dataType, title) {
+    req(input$pais, input$anio, input$dataType)
     
+    selected_variable <- if (input$dataType == "Puntaje") {
+      
+      paste0("libertad_", tolower(dataType), "_puntaje")
+    } else {
+      paste0("libertad_", tolower(dataType), "_ranking")
+    }
+    
+    data_filtered <- datos_libertad[datos_libertad$pais == input$pais & 
+                                      datos_libertad$anio >= input$anio[1] &
+                                      datos_libertad$anio <= input$anio[2], ]
+    ggplot(data_filtered, aes(x = anio, y = .data[[selected_variable]])) +
+      geom_line(color = "blue", size = 2) +
+      theme_minimal()
+  }
+  
+  output$plot_libertad_humana <- renderPlot({
+    generate_plot("Humana", "Libertad Humana")
+  })
+  
+  output$plot_libertad_personal <- renderPlot({
+    generate_plot("Personal", "Libertad Personal")
+  })
+  
+  output$plot_libertad_economica <- renderPlot({
+    generate_plot("Economica", "Libertad Económica")
   })
   
   output$downloadData <- downloadHandler(
     filename = function() {
-      paste("data-", input$country, ".csv", sep = "")
+      paste("datos_", input$pais, "", input$anio[1], "", input$anio[2], ".csv", sep = "")
     },
     content = function(file) {
- 
+      data_filtered <- datos_libertad[datos_libertad$pais == input$pais & 
+                                        datos_libertad$anio >= input$anio[1] &
+                                        datos_libertad$anio <= input$anio[2], ]
+      write.csv(data_filtered, file, row.names = FALSE)
     }
   )
 }
 
+shinyApp(ui, server)
+```
+```{r}
 
-shinyApp(ui = ui, server = server)
+ui <- dashboardPage(
+  skin = "green",
+  
+  dashboardHeader(title = "App por tipo de trabajo", 
+                  titleWidth = 300),
+  
+  dashboardSidebar(
+    selectInput("pais", "Escoja el país", 
+                choices = NULL, selected = NULL),
+    
+    sliderInput("anio", "Selecciona un año:", 
+                min = 2008, max = 2016, value = c(2008, 2016)),
+    
+    radioButtons("dataType", "Elige visualización:", 
+                 choices = c("Puntaje", "Ranking"), selected = "Puntaje"),
+    
+    downloadButton("downloadData", "Descargar datos")
+  ),
+  dashboardBody(
+    tabItem(
+      title = "Contenido de la pestaña Gráficos",
+      tabName = "grafico",
+      tabsetPanel(
+        tabPanel("Libertad Humana",
+                 br(),
+                 plotOutput("plot_libertad_humana")
+        ),
+        tabPanel("Libertad Personal",
+                 br(),
+                 plotOutput("plot_libertad_personal")
+        ),
+        tabPanel("Libertad Económica",
+                 br(),
+                 plotOutput("plot_libertad_economica")
+        )
+      )
+    )
+  )
+)
 
+server <- function(input, output, session) {
+  
+  datos_libertad <- read_csv("datos_libertad.csv")
+  
+  updateSelectInput(session, "pais", choices = unique(datos_libertad$pais))
+  
+  observe({
+    updateSelectInput(session, "pais", 
+                      choices = unique(datos_libertad$pais))
+  })
+  
+  generate_plot <- function(dataType, title) {
+    req(input$pais, input$anio, input$dataType)
+    
+    selected_variable <- if (input$dataType == "Puntaje") {
+      
+      paste0("libertad_", tolower(dataType), "_puntaje")
+    } else {
+      paste0("libertad_", tolower(dataType), "_ranking")
+    }
+    
+    data_filtered <- datos_libertad[datos_libertad$pais == input$pais & 
+                                      datos_libertad$anio >= input$anio[1] &
+                                      datos_libertad$anio <= input$anio[2], ]
+    ggplot(data_filtered, aes(x = anio, y = .data[[selected_variable]])) +
+      geom_line(color = "green", size = 2) +
+      theme_minimal()
+  }
+  
+  output$plot_libertad_humana <- renderPlot({
+    generate_plot("Humana", "Libertad Humana")
+  })
+  
+  output$plot_libertad_personal <- renderPlot({
+    generate_plot("Personal", "Libertad Personal")
+  })
+  
+  output$plot_libertad_economica <- renderPlot({
+    generate_plot("Economica", "Libertad Económica")
+  })
+  
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      paste("datos_", input$pais, "", input$anio[1], "", input$anio[2], ".csv", sep = "")
+    },
+    content = function(file) {
+      data_filtered <- datos_libertad[datos_libertad$pais == input$pais & 
+                                        datos_libertad$anio >= input$anio[1] &
+                                        datos_libertad$anio <= input$anio[2], ]
+      write.csv(data_filtered, file, row.names = FALSE)
+    }
+  )
+}
+
+shinyApp(ui, server)
 ```
 
 
